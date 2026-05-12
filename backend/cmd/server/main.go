@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 	server "github.com/rafaeldepontes/voting-go/internal/voting/server"
 	"github.com/rafaeldepontes/voting-go/internal/voting/service"
 )
@@ -19,6 +20,10 @@ var u = websocket.Upgrader{
 	WriteBufferSize: WriteBufferSize,
 	ReadBufferSize:  ReadBufferSize,
 	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
+func init() {
+	_ = godotenv.Load(".env")
 }
 
 func main() {
