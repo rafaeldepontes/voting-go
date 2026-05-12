@@ -41,18 +41,24 @@ go run cmd/server/main.go
 ```
 The server defaults to port 8080.
 
+### List all polls
+
+```bash
+curl http://localhost:8080/polls
+```
+
 ### Creating a Poll
 
 ```bash
 curl -X POST http://localhost:8080/polls \
-     -d '{"name": "Poll Name", "options": ["Option 1", "Option 2"]}'
+     -d '{"name": "The Best Programming Language", "options": ["Golang", "Rust", "Kotlin", "C#"]}'
 ```
 
 ### Voting
 
 ```bash
 curl -X POST http://localhost:8080/polls/{id}/vote \
-     -d '{"option_id": 1}'
+     -d '{"optionId": 1}'
 ```
 
 ### Real-Time Monitoring
