@@ -7,6 +7,9 @@ import (
 
 type Service interface {
 
+	// ListPolls list all availables polls.
+	ListPolls() []model.PollDto
+
 	// CreatePoll creates the poll, increases the poll counter
 	// and managers the in memory map.
 	CreatePoll(p model.PollReq) (string, error)

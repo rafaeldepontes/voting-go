@@ -6,6 +6,11 @@ type Poll struct {
 	Options []Option `json:"options"`
 }
 
+type PollDto struct {
+	ID   string `json:"id"`
+	Text string `json:"text"`
+}
+
 type PollReq struct {
 	Name    string   `json:"name"`
 	Options []string `json:"options"`

@@ -24,6 +24,17 @@ func NewService() voting.Service {
 	}
 }
 
+func (s *service) ListPolls() []model.PollDto {
+	p := make([]model.PollDto, 0, len(s.polls))
+	for i := range s.polls {
+		p = append(p, model.PollDto{
+			ID:   s.polls[i].ID,
+			Text: s.polls[i].Text,
+		})
+	}
+	return p
+}
+
 func (s *service) CreatePoll(p model.PollReq) (string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

@@ -12,6 +12,7 @@ func MapRoutesPoll(h voting.Handler) http.Handler {
 	mux.HandleFunc("POST /polls", h.CreatePoll)
 	mux.HandleFunc("POST /polls/{id}/vote", h.RegisterVote)
 	mux.HandleFunc("GET /ws/polls/{id}", h.HandleWS)
+	mux.HandleFunc("GET /polls", h.ListPolls)
 
 	return mux
 }

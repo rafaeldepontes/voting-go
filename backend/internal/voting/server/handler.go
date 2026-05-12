@@ -23,6 +23,14 @@ func NewHandler(u websocket.Upgrader, s voting.Service) voting.Handler {
 	}
 }
 
+// ListPolls implements [voting.Handler].
+func (h *handler) ListPolls(w http.ResponseWriter, r *http.Request) {
+	var p []model.PollDto = h.s.ListPolls()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(p)
+}
+
 // CreatePoll implements [voting.Handler].
 func (h *handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	var req model.PollReq
