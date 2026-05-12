@@ -1,0 +1,27 @@
+services:
+  redis-compose:
+    image: redis
+    command: redis-server
+    container_name: redis
+    deploy:
+      mode: replicated
+      replicas: 1
+    ports:
+      - "6379:6379"
+
+  golang-project:
+    container_name: "my-project"
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: golang-project
+    depends_on:
+    deploy:
+      mode: replicated
+      replicas: 1
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+
+volumes:
