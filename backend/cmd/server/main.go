@@ -36,6 +36,18 @@ func main() {
 	h := server.NewHandler(u, ss)
 	mux := server.MapRoutesPoll(h)
 
+	corsMux := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("FRONTEND_URL"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+
+		if r.Method == "OPTIONS" {
+			return
+		}
+
+		mux.ServeHTTP(w, r)
+	})
+
 	log.Printf("Application running on port %s\n", port)
-	log.Fatalln(http.ListenAndServe(":"+port, mux))
+	log.Fatalln(http.ListenAndServe(":"+port, corsMux))
 }
