@@ -1,0 +1,81 @@
+.voteView {
+  text-align: left;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.backLink {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1.5rem;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.optionItem {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.optionItem:hover {
+  border-color: var(--accent-border);
+}
+
+.selected {
+  border-color: var(--primary);
+  background: var(--accent-bg);
+}
+
+.optionItem input {
+  margin-right: 1rem;
+}
+
+.optionLabelText {
+  flex: 1;
+  font-weight: 500;
+}
+
+.checkIcon {
+  color: var(--primary);
+}
+
+.submitVoteButton {
+  width: 100%;
+  padding: 1rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.submitVoteButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  color: var(--danger);
+  background: var(--accent-bg);
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  border: 1px solid var(--danger);
+}

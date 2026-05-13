@@ -1,122 +1,80 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState } from 'react';
+import { List, PlusCircle, BarChart2, Vote } from 'lucide-react';
+import styles from './App.module.css';
+import { PollList } from './components/PollList/PollList';
+import { CreatePoll } from './components/CreatePoll/CreatePoll';
+import { ResultsView } from './components/ResultsView/ResultsView';
+import { VoteView } from './components/VoteView/VoteView';
+
+type Tab = 'polls' | 'create' | 'results' | 'vote';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [activeTab, setActiveTab] = useState<Tab>('polls');
+  const [selectedPollId, setSelectedPollId] = useState<string | null>(null);
+
+  const handleSelectPoll = (id: string, view: 'vote' | 'results') => {
+    setSelectedPollId(id);
+    setActiveTab(view);
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'polls':
+        return <PollList onSelectPoll={handleSelectPoll} />;
+      case 'create':
+        return <CreatePoll onPollCreated={() => setActiveTab('polls')} />;
+      case 'vote':
+        return selectedPollId ? (
+          <VoteView 
+            pollId={selectedPollId} 
+            onVoteSuccess={() => setActiveTab('results')}
+            onBack={() => setActiveTab('polls')}
+          />
+        ) : <PollList onSelectPoll={handleSelectPoll} />;
+      case 'results':
+        return selectedPollId ? (
+          <ResultsView pollId={selectedPollId} />
+        ) : <PollList onSelectPoll={handleSelectPoll} />;
+      default:
+        return <PollList onSelectPoll={handleSelectPoll} />;
+    }
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+    <div className={styles.appContainer}>
+      <header className={styles.header}>
+        <h1>Voting Go</h1>
+        <p>Real-time polling made simple</p>
+      </header>
+
+      <nav className={styles.tabNav}>
+        <button 
+          className={`${styles.tabButton} ${activeTab === 'polls' ? styles.active : ''}`}
+          onClick={() => setActiveTab('polls')}
         >
-          Count is {count}
+          <List size={20} />
+          Polls
         </button>
-      </section>
+        <button 
+          className={`${styles.tabButton} ${activeTab === 'create' ? styles.active : ''}`}
+          onClick={() => setActiveTab('create')}
+        >
+          <PlusCircle size={20} />
+          Create Poll
+        </button>
+        {(activeTab === 'vote' || activeTab === 'results') && selectedPollId && (
+          <button className={`${styles.tabButton} ${styles.active}`}>
+            {activeTab === 'vote' ? <Vote size={20} /> : <BarChart2 size={20} />}
+            {activeTab === 'vote' ? 'Voting' : 'Live Results'}
+          </button>
+        )}
+      </nav>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <main className="content">
+        {renderContent()}
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
