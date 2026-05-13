@@ -1,6 +1,8 @@
 package voting
 
 import (
+	"context"
+
 	"github.com/gorilla/websocket"
 	"github.com/rafaeldepontes/voting-go/internal/poll/model"
 )
@@ -8,16 +10,16 @@ import (
 type Service interface {
 
 	// ListPolls list all availables polls.
-	ListPolls() []model.PollDto
+	ListPolls(ctx context.Context) []model.PollDto
 
 	// CreatePoll creates the poll, increases the poll counter
 	// and managers the in memory map.
-	CreatePoll(p model.PollReq) (string, error)
+	CreatePoll(ctx context.Context, p model.PollReq) (string, error)
 
 	// RegisterVote updates the in memory poll pointer,
 	// manage the option control and then broadcast the info.
-	RegisterVote(pollID string, optionID int) error
+	RegisterVote(ctx context.Context, pollID string, optionID int) error
 
 	// Subscribe subscribes a new "user" to our in memory map.
-	Subscribe(pollID string, conn *websocket.Conn) error
+	Subscribe(ctx context.Context, pollID string, conn *websocket.Conn) error
 }

@@ -6,9 +6,10 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/rafaeldepontes/voting-go/internal/poll/model"
+	pm "github.com/rafaeldepontes/voting-go/internal/poll/model"
 	"github.com/rafaeldepontes/voting-go/internal/utils"
 	"github.com/rafaeldepontes/voting-go/internal/voting"
+	vm "github.com/rafaeldepontes/voting-go/internal/voting/model"
 )
 
 type handler struct {
@@ -25,7 +26,7 @@ func NewHandler(u websocket.Upgrader, s voting.Service) voting.Handler {
 
 // ListPolls implements [voting.Handler].
 func (h *handler) ListPolls(w http.ResponseWriter, r *http.Request) {
-	var p []model.PollDto = h.s.ListPolls()
+	var p []pm.PollDto = h.s.ListPolls(r.Context())
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(p)
@@ -33,13 +34,13 @@ func (h *handler) ListPolls(w http.ResponseWriter, r *http.Request) {
 
 // CreatePoll implements [voting.Handler].
 func (h *handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
-	var req model.PollReq
+	var req pm.PollReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	id, err := h.s.CreatePoll(req)
+	id, err := h.s.CreatePoll(r.Context(), req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -58,13 +59,13 @@ func (h *handler) RegisterVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req model.VoteReq
+	var req vm.VoteReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := h.s.RegisterVote(pollID, req.OptionID); err != nil {
+	if err := h.s.RegisterVote(r.Context(), pollID, req.OptionID); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -88,7 +89,7 @@ func (h *handler) HandleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.s.Subscribe(pollID, conn); err != nil {
+	if err := h.s.Subscribe(r.Context(), pollID, conn); err != nil {
 		conn.Close()
 		log.Printf("[ERROR] subscription failed: %v\n", err)
 		http.Error(w, utils.GenericError.Error(), http.StatusInternalServerError)

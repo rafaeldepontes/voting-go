@@ -7,8 +7,10 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
+	"github.com/rafaeldepontes/voting-go/internal/poll/repository"
 	server "github.com/rafaeldepontes/voting-go/internal/voting/server"
 	"github.com/rafaeldepontes/voting-go/internal/voting/service"
+	"github.com/rafaeldepontes/voting-go/pkg/cache/redis"
 )
 
 const (
@@ -32,7 +34,8 @@ func main() {
 		port = "8080"
 	}
 
-	ss := service.NewService()
+	r := repository.NewRepository(redis.GetCache())
+	ss := service.NewService(r)
 	h := server.NewHandler(u, ss)
 	mux := server.MapRoutesPoll(h)
 

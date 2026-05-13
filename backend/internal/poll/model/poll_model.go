@@ -1,14 +1,18 @@
 package model
 
+import "time"
+
 type Poll struct {
-	ID      string   `json:"id"`
-	Text    string   `json:"text"`
-	Options []Option `json:"options"`
+	ID       string        `json:"id"`
+	Text     string        `json:"text"`
+	Options  []Option      `json:"options"`
+	Duration time.Duration `json:"duration"`
 }
 
 type PollDto struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
+	ID       string        `json:"id"`
+	Text     string        `json:"text"`
+	Duration time.Duration `json:"duration"`
 }
 
 type PollReq struct {
@@ -20,8 +24,4 @@ type Option struct {
 	Text  string `json:"text"`
 	ID    int    `json:"id"`
 	Votes int    `json:"votes"`
-}
-
-type VoteReq struct {
-	OptionID int `json:"optionId"`
 }

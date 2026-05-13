@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreatePoll(t *testing.T) {
-	s := NewService()
+	s := NewService(nil)
 
 	tests := []struct {
 		name    string
@@ -26,7 +26,7 @@ func TestCreatePoll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := s.CreatePoll(tt.req)
+			id, err := s.CreatePoll(t.Context(), tt.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreatePoll() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -39,8 +39,8 @@ func TestCreatePoll(t *testing.T) {
 }
 
 func TestRegisterVote(t *testing.T) {
-	s := NewService()
-	pollID, _ := s.CreatePoll(model.PollReq{
+	s := NewService(nil)
+	pollID, _ := s.CreatePoll(t.Context(), model.PollReq{
 		Name:    "Test Poll",
 		Options: []string{"Opt 1", "Opt 2"},
 	})
@@ -73,7 +73,7 @@ func TestRegisterVote(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := s.RegisterVote(tt.pollID, tt.optionID)
+			err := s.RegisterVote(t.Context(), tt.pollID, tt.optionID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RegisterVote() error = %v, wantErr %v", err, tt.wantErr)
 			}
