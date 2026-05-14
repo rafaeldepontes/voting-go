@@ -7,10 +7,14 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
-	"github.com/rafaeldepontes/voting-go/internal/poll/repository"
-	server "github.com/rafaeldepontes/voting-go/internal/voting/server"
-	"github.com/rafaeldepontes/voting-go/internal/voting/service"
-	"github.com/rafaeldepontes/voting-go/pkg/cache/redis"
+	ar "github.com/rafaeldepontes/voting-go/internal/auth/repository"
+	asr "github.com/rafaeldepontes/voting-go/internal/auth/server"
+	asv "github.com/rafaeldepontes/voting-go/internal/auth/service"
+	"github.com/rafaeldepontes/voting-go/internal/middleware"
+	pr "github.com/rafaeldepontes/voting-go/internal/poll/repository"
+	vsr "github.com/rafaeldepontes/voting-go/internal/voting/server"
+	vsv "github.com/rafaeldepontes/voting-go/internal/voting/service"
+	"github.com/rafaeldepontes/voting-go/pkg/database/postgres"
 )
 
 const (
@@ -21,7 +25,6 @@ const (
 var u = websocket.Upgrader{
 	WriteBufferSize: WriteBufferSize,
 	ReadBufferSize:  ReadBufferSize,
-	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 func init() {
@@ -30,17 +33,33 @@ func init() {
 
 func main() {
 	port := os.Getenv("PORT")
+	frontend := os.Getenv("FRONTEND_URL")
 	if port == "" {
 		port = "8080"
 	}
 
-	r := repository.NewRepository(redis.GetCache())
-	ss := service.NewService(r)
-	h := server.NewHandler(u, ss)
-	mux := server.MapRoutesPoll(h)
+	u.CheckOrigin = func(r *http.Request) bool { return r.URL.Host == frontend }
+	// u.CheckOrigin = func(r *http.Request) bool { return true }
 
+	postgres.GetDb()
+	defer postgres.Close()
+
+	if err := postgres.RunMigrations(); err != nil {
+		log.Fatalf("failed to run migrations: %v", err)
+	}
+
+	r := pr.NewRepository()
+	ss := vsv.NewService(r)
+	han := vsr.NewHandler(u, ss)
+
+	ar := ar.NewRepository()
+	as := asv.NewService(ar)
+	m := middleware.NewMiddleware(os.Getenv("SECRET_KEY"))
+	auth := asr.NewHandler(as, m.JwtBuilder)
+
+	mux := middleware.NewHandler(frontend, m, han, auth)
 	corsMux := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", os.Getenv("FRONTEND_URL"))
+		w.Header().Set("Access-Control-Allow-Origin", frontend)
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 

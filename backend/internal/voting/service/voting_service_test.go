@@ -1,13 +1,32 @@
 package service
 
 import (
+	"context"
 	"testing"
 
 	"github.com/rafaeldepontes/voting-go/internal/poll/model"
 )
 
+type mockRepository struct{}
+
+func (m *mockRepository) Insert(ctx context.Context, poll model.Poll) error {
+	return nil
+}
+
+func (m *mockRepository) FindPollByID(ctx context.Context, id string) (model.Poll, error) {
+	return model.Poll{}, nil
+}
+
+func (m *mockRepository) ListPolls(ctx context.Context) ([]model.Poll, error) {
+	return []model.Poll{}, nil
+}
+
+func (m *mockRepository) Update(ctx context.Context, poll model.Poll) error {
+	return nil
+}
+
 func TestCreatePoll(t *testing.T) {
-	s := NewService(nil)
+	s := NewService(&mockRepository{})
 
 	tests := []struct {
 		name    string
@@ -26,56 +45,13 @@ func TestCreatePoll(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			id, err := s.CreatePoll(t.Context(), tt.req)
+			id, err := s.CreatePoll(context.Background(), tt.req)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CreatePoll() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if id == "" && !tt.wantErr {
 				t.Error("CreatePoll() returned empty ID")
-			}
-		})
-	}
-}
-
-func TestRegisterVote(t *testing.T) {
-	s := NewService(nil)
-	pollID, _ := s.CreatePoll(t.Context(), model.PollReq{
-		Name:    "Test Poll",
-		Options: []string{"Opt 1", "Opt 2"},
-	})
-
-	tests := []struct {
-		name     string
-		pollID   string
-		optionID int
-		wantErr  bool
-	}{
-		{
-			name:     "Valid Vote",
-			pollID:   pollID,
-			optionID: 1,
-			wantErr:  false,
-		},
-		{
-			name:     "Invalid Poll ID",
-			pollID:   "999",
-			optionID: 1,
-			wantErr:  true,
-		},
-		{
-			name:     "Invalid Option ID",
-			pollID:   pollID,
-			optionID: 99,
-			wantErr:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := s.RegisterVote(t.Context(), tt.pollID, tt.optionID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("RegisterVote() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

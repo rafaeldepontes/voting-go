@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -37,8 +38,9 @@ func (s *service) ListPolls(ctx context.Context) []model.PollDto {
 	p := make([]model.PollDto, 0, len(polls))
 	for i := range polls {
 		p = append(p, model.PollDto{
-			ID:   polls[i].ID,
-			Text: polls[i].Text,
+			ID:       polls[i].ID,
+			Text:     polls[i].Text,
+			Duration: polls[i].Duration,
 		})
 	}
 	return p
@@ -52,7 +54,7 @@ func (s *service) CreatePoll(ctx context.Context, p model.PollReq) (string, erro
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		log.Printf("[ERROR] didn't create the uuid: %v\n", err)
-		return "", utils.GenericError
+		return "", utils.ErrGenericError
 	}
 
 	id := uuid.String()
@@ -67,13 +69,15 @@ func (s *service) CreatePoll(ctx context.Context, p model.PollReq) (string, erro
 	}
 
 	poll := model.Poll{
-		ID:      id,
-		Text:    p.Name,
-		Options: options,
+		ID:        id,
+		Text:      p.Name,
+		Options:   options,
+		Duration:  p.Duration,
+		CreatedAt: time.Now(),
 	}
 	if err := s.pr.Insert(ctx, poll); err != nil {
 		log.Printf("[ERROR] error inserting poll: %v\n", err)
-		return "", utils.GenericError
+		return "", utils.ErrGenericError
 	}
 
 	return id, nil
@@ -86,7 +90,12 @@ func (s *service) RegisterVote(ctx context.Context, pollID string, optionID int)
 	if err != nil {
 		s.mu.Unlock()
 		log.Printf("[ERROR] could not find poll by id %s because: %v\n", pollID, err)
-		return utils.PollNotFound
+		return utils.ErrPollNotFound
+	}
+
+	if poll.Duration > 0 && time.Since(poll.CreatedAt) > poll.Duration {
+		s.mu.Unlock()
+		return utils.ErrPollExpired
 	}
 
 	found := false
@@ -100,12 +109,12 @@ func (s *service) RegisterVote(ctx context.Context, pollID string, optionID int)
 	if err := s.pr.Update(ctx, poll); err != nil {
 		log.Printf("[ERROR] error updating poll: %v\n", err)
 		s.mu.Unlock()
-		return utils.GenericError
+		return utils.ErrGenericError
 	}
 
 	if !found {
 		s.mu.Unlock()
-		return utils.OptionsNotFound
+		return utils.ErrOptionsNotFound
 	}
 	s.mu.Unlock()
 
@@ -121,7 +130,7 @@ func (s *service) Subscribe(ctx context.Context, pollID string, conn *websocket.
 	if err != nil {
 		s.mu.Unlock()
 		log.Printf("[ERROR] could not find poll by id %s because: %v\n", pollID, err)
-		return utils.PollNotFound
+		return utils.ErrPollNotFound
 	}
 
 	s.subscribers[pollID] = append(s.subscribers[pollID], conn)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/rafaeldepontes/voting-go/internal/poll"
 	"github.com/rafaeldepontes/voting-go/internal/poll/model"
+	rdb "github.com/rafaeldepontes/voting-go/pkg/cache/redis"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -14,9 +15,9 @@ type repository struct {
 	db *redis.Client
 }
 
-func NewRepository(db *redis.Client) poll.Repository {
+func NewRepository() poll.Repository {
 	return &repository{
-		db,
+		db: rdb.GetCache(),
 	}
 }
 

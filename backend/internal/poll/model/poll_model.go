@@ -3,10 +3,11 @@ package model
 import "time"
 
 type Poll struct {
-	ID       string        `json:"id"`
-	Text     string        `json:"text"`
-	Options  []Option      `json:"options"`
-	Duration time.Duration `json:"duration"`
+	ID        string        `json:"id"`
+	Text      string        `json:"text"`
+	Options   []Option      `json:"options"`
+	Duration  time.Duration `json:"duration"`
+	CreatedAt time.Time     `json:"createdAt"`
 }
 
 type PollDto struct {
@@ -16,8 +17,9 @@ type PollDto struct {
 }
 
 type PollReq struct {
-	Name    string   `json:"name"`
-	Options []string `json:"options"`
+	Name     string        `json:"name"`
+	Options  []string      `json:"options"`
+	Duration time.Duration `json:"duration"`
 }
 
 type Option struct {

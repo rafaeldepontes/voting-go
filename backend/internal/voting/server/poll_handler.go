@@ -1,4 +1,4 @@
-package servers
+package server
 
 import (
 	"encoding/json"
@@ -55,7 +55,7 @@ func (h *handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 func (h *handler) RegisterVote(w http.ResponseWriter, r *http.Request) {
 	pollID := r.PathValue("id")
 	if pollID == "" {
-		http.Error(w, utils.PollIDMissing.Error(), http.StatusBadRequest)
+		http.Error(w, utils.ErrPollIDMissing.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -77,7 +77,7 @@ func (h *handler) RegisterVote(w http.ResponseWriter, r *http.Request) {
 func (h *handler) HandleWS(w http.ResponseWriter, r *http.Request) {
 	pollID := r.PathValue("id")
 	if pollID == "" {
-		http.Error(w, utils.PollIDMissing.Error(), http.StatusBadRequest)
+		http.Error(w, utils.ErrPollIDMissing.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -85,14 +85,14 @@ func (h *handler) HandleWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := h.u.Upgrade(w, r, nil)
 	if err != nil {
 		log.Printf("[ERROR] websocket upgrade failed: %v\n", err)
-		http.Error(w, utils.GenericError.Error(), http.StatusInternalServerError)
+		http.Error(w, utils.ErrGenericError.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.s.Subscribe(r.Context(), pollID, conn); err != nil {
 		conn.Close()
 		log.Printf("[ERROR] subscription failed: %v\n", err)
-		http.Error(w, utils.GenericError.Error(), http.StatusInternalServerError)
+		http.Error(w, utils.ErrGenericError.Error(), http.StatusInternalServerError)
 		return
 	}
 
