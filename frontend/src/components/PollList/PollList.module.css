@@ -1,23 +1,139 @@
-.pollList {
-  /* No special container styles needed for now */
+.pollListPage {
+  padding: 1rem 0;
 }
 
-.listHeader {
+.pageHeader {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.headerTitle h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.headerTitle p {
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.createButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: var(--accent);
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.createButton:hover {
+  background-color: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.pollGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+.pollCard {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pollCard:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.pollInfo {
   margin-bottom: 1.5rem;
 }
 
-.iconButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-muted);
+.pollText {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
 }
 
-.spinning {
+.pollMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.pollActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.voteLink, .resultsLink {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.voteLink {
+  background-color: var(--accent-muted);
+  color: var(--accent);
+}
+
+.voteLink:hover {
+  background-color: var(--accent);
+  color: #fff;
+}
+
+.resultsLink {
+  background-color: var(--surface-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.resultsLink:hover {
+  background-color: var(--border);
+}
+
+.loadingState, .errorState, .emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 1rem;
+  text-align: center;
+}
+
+.spinner {
+  color: var(--accent);
   animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
 }
 
 @keyframes spin {
@@ -25,69 +141,43 @@
   to { transform: rotate(360deg); }
 }
 
-.error {
+.errorState {
   color: var(--danger);
-  background: var(--accent-bg);
-  padding: 0.75rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  border: 1px solid var(--danger);
+  gap: 1rem;
 }
 
-.pollGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.pollCard {
-  padding: 1.5rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  transition: all 0.2s;
-  text-align: left;
-}
-
-.pollCard:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent-border);
-  box-shadow: var(--shadow);
-}
-
-.pollCard h3 {
-  margin-top: 0;
-  color: var(--text-h);
-}
-
-.cardActions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.actionButton {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  cursor: pointer;
-  transition: all 0.2s;
+.retryButton {
+  background-color: var(--surface);
   color: var(--text);
-  font-weight: 500;
+  border: 1px solid var(--border);
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  margin-top: 1rem;
 }
 
-.vote:hover {
-  background: var(--accent-bg);
-  border-color: var(--primary);
-  color: var(--primary);
+.emptyIcon {
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  opacity: 0.5;
 }
 
-.results:hover {
-  background: var(--code-bg);
-  border-color: var(--border);
+.emptyState h2 {
+  margin-bottom: 0.5rem;
+}
+
+.emptyState p {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+}
+
+.emptyLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .pollGrid {
+    grid-template-columns: 1fr;
+  }
 }

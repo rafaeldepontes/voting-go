@@ -1,111 +1,221 @@
-import { useEffect, useState } from 'react';
-import { CheckCircle2, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Vote, ArrowLeft, AlertCircle, Loader2, CheckCircle, Clock, Users } from 'lucide-react';
 import styles from './VoteView.module.css';
 
 interface Option {
   id: number;
   text: string;
+  votes: number;
 }
 
 interface Poll {
   id: string;
   text: string;
   options: Option[];
+  duration: number;
+  createdAt: string;
 }
 
 interface VoteViewProps {
-  pollId: string;
+  token: string | null;
+  onAuthError: () => void;
   onVoteSuccess: () => void;
-  onBack: () => void;
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
-const WS_URL = import.meta.env.VITE_WS_URL;
+const WS_URL = import.meta.env.VITE_WS_URL || API_URL?.replace('http', 'ws');
 
-export const VoteView = ({ pollId, onVoteSuccess, onBack }: VoteViewProps) => {
+export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) => {
+  const { id: pollId } = useParams<{ id: string }>();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [voted, setVoted] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const ws = new WebSocket(`${WS_URL}/ws/polls/${pollId}`);
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setPoll(data);
-      setLoading(false);
-      ws.close();
+    if (!pollId) return;
+
+    let socket: WebSocket | null = null;
+    const connectWS = () => {
+      const tokenQuery = token ? `?token=${token}` : '';
+      socket = new WebSocket(`${WS_URL}/ws/polls/${pollId}${tokenQuery}`);
+
+      socket.onmessage = (event) => {
+        const updatedPoll = JSON.parse(event.data);
+        setPoll(updatedPoll);
+        setLoading(false);
+      };
+
+      socket.onerror = () => {
+        setError('Real-time connection failed. Falling back to list page.');
+        setLoading(false);
+      };
+
+      socket.onclose = () => {
+        console.log('WS connection closed');
+      };
     };
-    ws.onerror = () => {
-      setError('Failed to load poll options.');
-      setLoading(false);
+
+    connectWS();
+
+    return () => {
+      if (socket) socket.close();
     };
-  }, [pollId]);
+  }, [pollId, token]);
 
   const handleVote = async () => {
-    if (selectedOption === null) return;
+    if (selectedOption === null || !pollId) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${API_URL}/polls/${pollId}/vote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ optionId: selectedOption }),
       });
 
-      if (!response.ok) throw new Error('Failed to register vote');
-      
+      if (response.status === 401 || response.status === 403) {
+        if (token) onAuthError();
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to register vote');
+      }
+
+      setVoted(true);
       onVoteSuccess();
-    } catch (err) {
-      setError('Could not submit vote. Is the backend running?');
+      setTimeout(() => {
+        navigate(`/results/${pollId}`);
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message || 'Could not register your vote.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <p>Loading options...</p>;
-  if (error) return <p className={styles.error}>{error}</p>;
-  if (!poll) return <p>Poll not found.</p>;
+  const getTimeRemaining = () => {
+    if (!poll || poll.duration <= 0) return 'Permanent';
+    const createdAt = new Date(poll.createdAt).getTime();
+    const durationMs = poll.duration / 1000000;
+    const expiresAt = createdAt + durationMs;
+    const remaining = expiresAt - Date.now();
+    
+    if (remaining <= 0) return 'Expired';
+    
+    const minutes = Math.floor(remaining / 60000);
+    const hours = Math.floor(minutes / 60);
+    if (hours > 0) return `${hours}h ${minutes % 60}m remaining`;
+    return `${minutes}m remaining`;
+  };
+
+  if (loading) {
+    return (
+      <div className={styles.loadingState}>
+        <Loader2 size={40} className={styles.spinner} />
+        <p>Connecting to live poll...</p>
+      </div>
+    );
+  }
+
+  if (!poll) {
+    return (
+      <div className={styles.errorState}>
+        <AlertCircle size={40} />
+        <h2>Poll not found</h2>
+        <p>The poll you are looking for doesn't exist or has been removed.</p>
+        <Link to="/" className={styles.backLink}>Back to Polls</Link>
+      </div>
+    );
+  }
+
+  const isExpired = getTimeRemaining() === 'Expired';
+  const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
 
   return (
-    <div className={styles.voteView}>
-      <button onClick={onBack} className={styles.backLink}>
-        <ArrowLeft size={16} /> Back to polls
+    <div className={styles.votePage}>
+      <button onClick={() => navigate('/')} className={styles.backButton}>
+        <ArrowLeft size={18} />
+        <span>Back to Polls</span>
       </button>
-      
-      <h2>{poll.text}</h2>
-      <p className="instruction">Select an option below:</p>
 
-      <div className={styles.optionsList}>
-        {poll.options.map((option) => (
-          <label 
-            key={option.id} 
-            className={`${styles.optionItem} ${selectedOption === option.id ? styles.selected : ''}`}
-          >
-            <input
-              type="radio"
-              name="poll-option"
-              value={option.id}
-              checked={selectedOption === option.id}
-              onChange={() => setSelectedOption(option.id)}
-              disabled={submitting}
-            />
-            <span className={styles.optionLabelText}>{option.text}</span>
-            {selectedOption === option.id && <CheckCircle2 size={20} className={styles.checkIcon} />}
-          </label>
-        ))}
+      <div className={styles.voteCard}>
+        <header className={styles.pollHeader}>
+          <div className={styles.pollMeta}>
+            <div className={styles.metaItem}>
+              <Clock size={14} />
+              <span>{getTimeRemaining()}</span>
+            </div>
+            <div className={styles.metaItem}>
+              <Users size={14} />
+              <span>{totalVotes} votes cast</span>
+            </div>
+          </div>
+          <h1>{poll.text}</h1>
+          <p>Select one of the options below to cast your vote.</p>
+        </header>
+
+        {voted ? (
+          <div className={styles.successState}>
+            <CheckCircle size={48} className={styles.successIcon} />
+            <h2>Vote Registered!</h2>
+            <p>Thank you for participating. Redirecting to results...</p>
+          </div>
+        ) : (
+          <div className={styles.optionsList}>
+            {poll.options.map((option) => (
+              <button
+                key={option.id}
+                className={`${styles.optionButton} ${selectedOption === option.id ? styles.selected : ''}`}
+                onClick={() => !isExpired && setSelectedOption(option.id)}
+                disabled={submitting || isExpired}
+              >
+                <span className={styles.optionText}>{option.text}</span>
+                {selectedOption === option.id && <CheckCircle size={20} className={styles.checkIcon} />}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {error && (
+          <div className={styles.errorBanner}>
+            <AlertCircle size={18} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {!voted && (
+          <div className={styles.actions}>
+            <button
+              className={styles.submitButton}
+              onClick={handleVote}
+              disabled={selectedOption === null || submitting || isExpired}
+            >
+              {submitting ? <Loader2 size={18} className={styles.spinner} /> : (
+                <>
+                  <Vote size={18} />
+                  <span>{isExpired ? 'Poll Expired' : 'Cast Your Vote'}</span>
+                </>
+              )}
+            </button>
+            <Link to={`/results/${pollId}`} className={styles.resultsLink}>
+              View Live Results
+            </Link>
+          </div>
+        )}
       </div>
-
-      <button 
-        onClick={handleVote} 
-        className={styles.submitVoteButton} 
-        disabled={selectedOption === null || submitting}
-      >
-        {submitting ? 'Voting...' : 'Submit Vote'}
-      </button>
     </div>
   );
 };

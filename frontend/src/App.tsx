@@ -1,79 +1,52 @@
-import { useState } from 'react';
-import { List, PlusCircle, BarChart2, Vote } from 'lucide-react';
-import styles from './App.module.css';
+import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Navbar } from './components/Layout/Navbar';
 import { PollList } from './components/PollList/PollList';
 import { CreatePoll } from './components/CreatePoll/CreatePoll';
 import { ResultsView } from './components/ResultsView/ResultsView';
 import { VoteView } from './components/VoteView/VoteView';
-
-type Tab = 'polls' | 'create' | 'results' | 'vote';
+import { Login } from './components/Login/Login';
+import { Register } from './components/Register/Register';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<Tab>('polls');
-  const [selectedPollId, setSelectedPollId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
 
-  const handleSelectPoll = (id: string, view: 'vote' | 'results') => {
-    setSelectedPollId(id);
-    setActiveTab(view);
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('token', token);
+    } else {
+      localStorage.removeItem('token');
+    }
+  }, [token]);
+
+  const handleLogout = () => {
+    setToken(null);
   };
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'polls':
-        return <PollList onSelectPoll={handleSelectPoll} />;
-      case 'create':
-        return <CreatePoll onPollCreated={() => setActiveTab('polls')} />;
-      case 'vote':
-        return selectedPollId ? (
-          <VoteView 
-            pollId={selectedPollId} 
-            onVoteSuccess={() => setActiveTab('results')}
-            onBack={() => setActiveTab('polls')}
-          />
-        ) : <PollList onSelectPoll={handleSelectPoll} />;
-      case 'results':
-        return selectedPollId ? (
-          <ResultsView pollId={selectedPollId} />
-        ) : <PollList onSelectPoll={handleSelectPoll} />;
-      default:
-        return <PollList onSelectPoll={handleSelectPoll} />;
-    }
+  const handleAuthError = () => {
+    setToken(null);
   };
 
   return (
-    <div className={styles.appContainer}>
-      <header className={styles.header}>
-        <h1>Voting Go</h1>
-        <p>Real-time polling made simple</p>
-      </header>
+    <BrowserRouter>
+      <Navbar token={token} onLogout={handleLogout} />
 
-      <nav className={styles.tabNav}>
-        <button 
-          className={`${styles.tabButton} ${activeTab === 'polls' ? styles.active : ''}`}
-          onClick={() => setActiveTab('polls')}
-        >
-          <List size={20} />
-          Polls
-        </button>
-        <button 
-          className={`${styles.tabButton} ${activeTab === 'create' ? styles.active : ''}`}
-          onClick={() => setActiveTab('create')}
-        >
-          <PlusCircle size={20} />
-          Create Poll
-        </button>
-        {(activeTab === 'vote' || activeTab === 'results') && selectedPollId && (
-          <button className={`${styles.tabButton} ${styles.active}`}>
-            {activeTab === 'vote' ? <Vote size={20} /> : <BarChart2 size={20} />}
-            {activeTab === 'vote' ? 'Voting' : 'Live Results'}
-          </button>
-        )}
-      </nav>
-
-      <main className="content">
-        {renderContent()}
+      <main className="content container">
+        <Routes>
+          <Route path="/" element={<PollList token={token} onAuthError={handleAuthError} />} />
+          <Route path="/login" element={<Login onLoginSuccess={(t) => setToken(t)} />} />
+          <Route path="/register" element={<Register onRegisterSuccess={() => { }} />} />
+          <Route path="/create" element={<CreatePoll token={token} onAuthError={handleAuthError} onPollCreated={() => { }} />} />
+          <Route path="/poll/:id" element={<VoteView token={token} onAuthError={handleAuthError} onVoteSuccess={() => { }} />} />
+          <Route path="/results/:id" element={<ResultsView token={token} />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
-    </div>
+
+      <footer style={{ padding: '2rem 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem', borderTop: '1px solid var(--border)', marginTop: 'auto' }}>
+        <p>&copy; 2026 Voting Go · Built by Rafael</p>
+      </footer>
+    </BrowserRouter>
   );
 }
 
