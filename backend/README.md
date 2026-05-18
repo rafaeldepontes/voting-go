@@ -81,6 +81,14 @@ curl -X POST http://localhost:8080/polls \
      -d '{"name": "The Best Programming Language", "options": ["Golang", "Rust", "Kotlin", "C#"]}'
 ```
 
+### Cancelling a Poll
+
+```bash
+curl -X DELETE http://localhost:8080/polls/{id} \
+     -H "Authorization: Bearer <token>"
+```
+*Note: Only the poll owner can cancel it.*
+
 ### Voting
 
 ```bash

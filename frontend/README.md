@@ -1,73 +1,61 @@
-# React + TypeScript + Vite
+# Voting-Go Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern React 19 single-page application for the Voting-Go platform. Built with Vite and TypeScript for high performance and developer productivity.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Dynamic Poll List**: Browse active community polls with real-time metadata.
+- **Live Voting View**: Cast votes and see instant feedback via WebSockets.
+- **Real-time Results**: Interactive charts showing vote distribution as it happens.
+- **Poll Cancellation**: integrated management for poll owners to cancel active polls with confirmation safety.
+- **Secure Auth Flow**: Protected routes and session management with JWT.
+- **Dark Mode UI**: Professional, accessible dark-themed interface using CSS Modules.
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19**: Leveraging the latest features and optimizations.
+- **Vite**: Ultra-fast build tool and development server.
+- **TypeScript**: Full type safety across the component tree.
+- **Lucide React**: Clean, consistent iconography.
+- **React Router Dom**: Client-side routing for seamless navigation.
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+3. Configure environment:
+   ```bash
+   cp .env.example .env
+   # Edit VITE_API_URL and VITE_WS_URL to point to your backend
+   ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Usage
+
+### Development Server
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Production Build
+```bash
+npm run build
 ```
+
+### Linting
+```bash
+npm run lint
+```
+
+## Structure
+
+- `/src/components`: UI components organized by feature (PollList, VoteView, ResultsView, etc.).
+- `/src/assets`: Static assets and global styles.
+- `/public`: Public assets and standard favicon/icons.

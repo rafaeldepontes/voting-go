@@ -4,7 +4,7 @@ services:
     command: redis-server
     container_name: redis
     env_file:
-      - "/backend/.env"
+      - ./backend/.env
     deploy:
       mode: replicated
       replicas: 1

@@ -13,6 +13,7 @@ This repository is split into two main components:
 ## Features
 
 - **Real-time Synchronization**: Result updates are broadcasted instantly via WebSockets.
+- **Poll Management**: Creators can cancel their active polls at any time.
 - **Secure Authentication**: User accounts and JWT-protected endpoints.
 - **Concurrent-safe**: High-performance voting logic using Go's synchronization primitives.
 - **Responsive UI**: A clean, modern interface for creating and participating in polls.
