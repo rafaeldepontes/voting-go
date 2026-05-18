@@ -53,21 +53,113 @@
   flex-direction: column;
   justify-content: space-between;
   transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
-.pollCard:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow);
+.pollHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .pollInfo {
-  margin-bottom: 1.5rem;
+  flex: 1;
+}
+
+.deleteButton {
+  color: var(--text-muted);
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.deleteButton:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
 }
 
 .pollText {
   font-size: 1.25rem;
   margin-bottom: 0.75rem;
   line-height: 1.4;
+}
+
+.confirmationOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(9, 9, 11, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 10;
+  text-align: center;
+  backdrop-filter: blur(4px);
+}
+
+.confirmationBox p {
+  font-weight: 500;
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
+}
+
+.confirmActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.confirmDelete {
+  background-color: var(--danger);
+  color: white;
+  padding: 0.65rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.confirmDelete:hover {
+  background-color: #dc2626;
+}
+
+.cancelDelete {
+  background-color: var(--surface-hover);
+  color: var(--text);
+  padding: 0.65rem;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+}
+
+.cancelDelete:hover {
+  background-color: var(--border);
+}
+
+.errorActions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.clearErrorButton {
+  background-color: transparent;
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.clearErrorButton:hover {
+  color: var(--text);
 }
 
 .pollMeta {

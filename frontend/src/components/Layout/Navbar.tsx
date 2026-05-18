@@ -1,5 +1,4 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Vote, List, PlusCircle, LogIn, UserPlus, LogOut } from 'lucide-react';
 import styles from './Navbar.module.css';
 
@@ -9,8 +8,6 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ token, onLogout }: NavbarProps) => {
-  const navigate = useNavigate();
-
   return (
     <nav className={styles.navbar}>
       <div className={`container ${styles.navContainer}`}>

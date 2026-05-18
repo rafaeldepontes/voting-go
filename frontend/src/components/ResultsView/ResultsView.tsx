@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { BarChart2, ArrowLeft, Loader2, Users, Clock, Vote } from 'lucide-react';
+import { BarChart2, ArrowLeft, Loader2, Users, Clock, Vote, Trash2 } from 'lucide-react';
 import styles from './ResultsView.module.css';
 
 interface Option {
@@ -19,15 +19,18 @@ interface Poll {
 
 interface ResultsViewProps {
   token: string | null;
+  onAuthError?: () => void;
 }
 
 const API_URL = import.meta.env.VITE_API_URL;
 const WS_URL = import.meta.env.VITE_WS_URL || API_URL?.replace('http', 'ws');
 
-export const ResultsView = ({ token }: ResultsViewProps) => {
+export const ResultsView = ({ token, onAuthError }: ResultsViewProps) => {
   const { id: pollId } = useParams<{ id: string }>();
   const [poll, setPoll] = useState<Poll | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -57,6 +60,45 @@ export const ResultsView = ({ token }: ResultsViewProps) => {
       if (socket) socket.close();
     };
   }, [pollId, token]);
+
+  const handleCancelPoll = async () => {
+    if (!pollId) return;
+
+    setCancelling(true);
+    setError(null);
+
+    try {
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/polls/${pollId}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        if (token && onAuthError) {
+          onAuthError();
+          return;
+        }
+        throw new Error('You do not have permission to cancel this poll');
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to cancel poll');
+      }
+
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Could not cancel poll.');
+      setShowConfirm(false);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -97,26 +139,46 @@ export const ResultsView = ({ token }: ResultsViewProps) => {
 
   return (
     <div className={styles.resultsPage}>
-      <button onClick={() => navigate(-1)} className={styles.backButton}>
-        <ArrowLeft size={18} />
-        <span>Back</span>
-      </button>
+      <div className={styles.topActions}>
+        <button onClick={() => navigate(-1)} className={styles.backButton}>
+          <ArrowLeft size={18} />
+          <span>Back</span>
+        </button>
+      </div>
 
       <div className={styles.resultsCard}>
         <header className={styles.resultsHeader}>
-          <div className={styles.pollMeta}>
-            <div className={styles.metaItem}>
-              <Clock size={14} />
-              <span>{getTimeRemaining()}</span>
+          <div className={styles.headerTop}>
+            <div className={styles.pollMeta}>
+              <div className={styles.metaItem}>
+                <Clock size={14} />
+                <span>{getTimeRemaining()}</span>
+              </div>
+              <div className={styles.metaItem}>
+                <Users size={14} />
+                <span>{totalVotes} total votes</span>
+              </div>
             </div>
-            <div className={styles.metaItem}>
-              <Users size={14} />
-              <span>{totalVotes} total votes</span>
-            </div>
+            {token && (
+              <button 
+                className={styles.deleteButtonInside} 
+                onClick={() => setShowConfirm(true)}
+                title="Cancel poll"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
           </div>
           <h1>{poll.text}</h1>
           <p>Live results updated in real-time as votes are cast.</p>
         </header>
+
+        {error && (
+          <div className={styles.errorBanner}>
+            <Trash2 size={18} />
+            <span>{error}</span>
+          </div>
+        )}
 
         <div className={styles.optionsGrid}>
           {poll.options.sort((a, b) => b.votes - a.votes).map((option) => {
@@ -147,6 +209,32 @@ export const ResultsView = ({ token }: ResultsViewProps) => {
           </Link>
         </div>
       </div>
+
+      {showConfirm && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h2>Cancel Poll</h2>
+            <p>Are you sure you want to cancel this poll? This action cannot be undone and all results will be lost.</p>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.confirmButton} 
+                onClick={handleCancelPoll}
+                disabled={cancelling}
+              >
+                {cancelling ? <Loader2 size={18} className={styles.spinner} /> : 'Yes, Cancel Poll'}
+              </button>
+              <button 
+                className={styles.cancelButton} 
+                onClick={() => setShowConfirm(false)}
+                disabled={cancelling}
+              >
+                No, Keep It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

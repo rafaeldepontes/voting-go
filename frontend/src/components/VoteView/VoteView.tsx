@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Vote, ArrowLeft, AlertCircle, Loader2, CheckCircle, Clock, Users } from 'lucide-react';
+import { Vote, ArrowLeft, AlertCircle, Loader2, CheckCircle, Clock, Users, Trash2 } from 'lucide-react';
 import styles from './VoteView.module.css';
 
 interface Option {
@@ -32,6 +32,8 @@ export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) =
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [voted, setVoted] = useState(false);
   const navigate = useNavigate();
@@ -106,6 +108,45 @@ export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) =
     }
   };
 
+  const handleCancelPoll = async () => {
+    if (!pollId) return;
+
+    setCancelling(true);
+    setError(null);
+
+    try {
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/polls/${pollId}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        if (token) {
+          onAuthError();
+          return;
+        }
+        throw new Error('You do not have permission to cancel this poll');
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to cancel poll');
+      }
+
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Could not cancel poll.');
+      setShowConfirm(false);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   const getTimeRemaining = () => {
     if (!poll || poll.duration <= 0) return 'Permanent';
     const createdAt = new Date(poll.createdAt).getTime();
@@ -146,22 +187,35 @@ export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) =
 
   return (
     <div className={styles.votePage}>
-      <button onClick={() => navigate('/')} className={styles.backButton}>
-        <ArrowLeft size={18} />
-        <span>Back to Polls</span>
-      </button>
+      <div className={styles.topActions}>
+        <button onClick={() => navigate('/')} className={styles.backButton}>
+          <ArrowLeft size={18} />
+          <span>Back to Polls</span>
+        </button>
+      </div>
 
       <div className={styles.voteCard}>
         <header className={styles.pollHeader}>
-          <div className={styles.pollMeta}>
-            <div className={styles.metaItem}>
-              <Clock size={14} />
-              <span>{getTimeRemaining()}</span>
+          <div className={styles.headerTop}>
+            <div className={styles.pollMeta}>
+              <div className={styles.metaItem}>
+                <Clock size={14} />
+                <span>{getTimeRemaining()}</span>
+              </div>
+              <div className={styles.metaItem}>
+                <Users size={14} />
+                <span>{totalVotes} votes cast</span>
+              </div>
             </div>
-            <div className={styles.metaItem}>
-              <Users size={14} />
-              <span>{totalVotes} votes cast</span>
-            </div>
+            {token && (
+              <button 
+                className={styles.deleteButtonInside} 
+                onClick={() => setShowConfirm(true)}
+                title="Cancel poll"
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
           </div>
           <h1>{poll.text}</h1>
           <p>Select one of the options below to cast your vote.</p>
@@ -216,6 +270,32 @@ export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) =
           </div>
         )}
       </div>
+
+      {showConfirm && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h2>Cancel Poll</h2>
+            <p>Are you sure you want to cancel this poll? This action cannot be undone and all results will be lost.</p>
+            <div className={styles.modalActions}>
+              <button 
+                className={styles.confirmButton} 
+                onClick={handleCancelPoll}
+                disabled={cancelling}
+              >
+                {cancelling ? <Loader2 size={18} className={styles.spinner} /> : 'Yes, Cancel Poll'}
+              </button>
+              <button 
+                className={styles.cancelButton} 
+                onClick={() => setShowConfirm(false)}
+                disabled={cancelling}
+              >
+                No, Keep It
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

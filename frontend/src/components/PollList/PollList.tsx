@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Vote, BarChart2, PlusCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
+import { Vote, BarChart2, PlusCircle, Clock, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import styles from './PollList.module.css';
 
 interface Poll {
@@ -20,6 +20,8 @@ export const PollList = ({ token, onAuthError }: PollListProps) => {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pollToCancel, setPollToCancel] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchPolls();
@@ -50,6 +52,43 @@ export const PollList = ({ token, onAuthError }: PollListProps) => {
       setError(err.message || 'Could not load polls');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelPoll = async (id: string) => {
+    setCancellingId(id);
+    setError(null);
+    try {
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_URL}/polls/${id}`, {
+        method: 'DELETE',
+        headers,
+      });
+
+      if (response.status === 401 || response.status === 403) {
+        if (token) {
+          onAuthError();
+          return;
+        }
+        throw new Error('You do not have permission to cancel this poll');
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to cancel poll');
+      }
+
+      setPolls(polls.filter(p => p.id !== id));
+      setPollToCancel(null);
+    } catch (err: any) {
+      setError(err.message || 'Could not cancel poll');
+      setPollToCancel(null);
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -87,7 +126,10 @@ export const PollList = ({ token, onAuthError }: PollListProps) => {
         <div className={styles.errorState}>
           <AlertCircle size={24} />
           <p>{error}</p>
-          <button onClick={fetchPolls} className={styles.retryButton}>Try Again</button>
+          <div className={styles.errorActions}>
+            <button onClick={fetchPolls} className={styles.retryButton}>Try Again</button>
+            <button onClick={() => setError(null)} className={styles.clearErrorButton}>Dismiss</button>
+          </div>
         </div>
       )}
 
@@ -102,14 +144,25 @@ export const PollList = ({ token, onAuthError }: PollListProps) => {
         <div className={styles.pollGrid}>
           {polls.map((poll) => (
             <div key={poll.id} className={styles.pollCard}>
-              <div className={styles.pollInfo}>
-                <h3 className={styles.pollText}>{poll.text}</h3>
-                <div className={styles.pollMeta}>
-                  <div className={styles.metaItem}>
-                    <Clock size={14} />
-                    <span>{formatDuration(poll.duration)}</span>
+              <div className={styles.pollHeader}>
+                <div className={styles.pollInfo}>
+                  <h3 className={styles.pollText}>{poll.text}</h3>
+                  <div className={styles.pollMeta}>
+                    <div className={styles.metaItem}>
+                      <Clock size={14} />
+                      <span>{formatDuration(poll.duration)}</span>
+                    </div>
                   </div>
                 </div>
+                {token && (
+                  <button 
+                    className={styles.deleteButton} 
+                    onClick={() => setPollToCancel(poll.id)}
+                    title="Cancel poll"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
               </div>
               <div className={styles.pollActions}>
                 <Link to={`/poll/${poll.id}`} className={styles.voteLink}>
@@ -121,6 +174,30 @@ export const PollList = ({ token, onAuthError }: PollListProps) => {
                   <span>Results</span>
                 </Link>
               </div>
+
+              {pollToCancel === poll.id && (
+                <div className={styles.confirmationOverlay}>
+                  <div className={styles.confirmationBox}>
+                    <p>Are you sure you want to cancel this poll?</p>
+                    <div className={styles.confirmActions}>
+                      <button 
+                        className={styles.confirmDelete} 
+                        onClick={() => handleCancelPoll(poll.id)}
+                        disabled={cancellingId === poll.id}
+                      >
+                        {cancellingId === poll.id ? <Loader2 size={16} className={styles.spinner} /> : 'Cancel Poll'}
+                      </button>
+                      <button 
+                        className={styles.cancelDelete} 
+                        onClick={() => setPollToCancel(null)}
+                        disabled={cancellingId === poll.id}
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -128,3 +205,4 @@ export const PollList = ({ token, onAuthError }: PollListProps) => {
     </div>
   );
 };
+
