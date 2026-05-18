@@ -49,6 +49,11 @@ func (r *repository) Insert(ctx context.Context, p model.Poll) error {
 	return r.db.Set(ctx, pollKey(p.ID), data, p.Duration).Err()
 }
 
+// Remove implements [poll.Repository].
+func (r *repository) Remove(ctx context.Context, pollID string) error {
+	return r.db.Del(ctx, pollID).Err()
+}
+
 // ListPolls implements [poll.Repository].
 func (r *repository) ListPolls(ctx context.Context) ([]model.Poll, error) {
 	const batchSize = 100

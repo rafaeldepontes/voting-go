@@ -16,6 +16,11 @@ type Service interface {
 	// and managers the in memory map.
 	CreatePoll(ctx context.Context, p model.PollReq) (string, error)
 
+	// CancelPoll cancels an existing poll if the user trying
+	// the action is actually the "poll owner". Unauthorized
+	// if not.
+	CancelPoll(ctx context.Context, pollID string) error
+
 	// RegisterVote updates the in memory poll pointer,
 	// manage the option control and then broadcast the info.
 	RegisterVote(ctx context.Context, pollID string, optionID int) error

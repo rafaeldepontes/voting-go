@@ -93,6 +93,28 @@ func (s *service) CreatePoll(ctx context.Context, p model.PollReq) (string, erro
 	return id, nil
 }
 
+func (s *service) CancelPoll(ctx context.Context, pollID string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	poll, err := s.pr.FindPollByID(ctx, pollID)
+	if err != nil {
+		log.Printf("[ERROR] could not find poll by id %s because: %v\n", pollID, err)
+		return utils.ErrPollNotFound
+	}
+
+	if poll.OwnerID != getUserID(ctx) {
+		return utils.ErrForbidden
+	}
+
+	if err := s.pr.Remove(ctx, pollID); err != nil {
+		log.Printf("[ERROR] could not cancel poll by id %s because: %v\n", pollID, err)
+		return utils.ErrGenericError
+	}
+
+	return nil
+}
+
 // RegisterVote implements [voting.Service].
 func (s *service) RegisterVote(ctx context.Context, pollID string, optionID int) error {
 	s.mu.Lock()
@@ -183,7 +205,7 @@ func (s *service) broadcast(ctx context.Context, pollID string) {
 }
 
 func getUserID(ctx context.Context) string {
-	val := ctx.Value(middleware.UserID("userID"))
+	val := ctx.Value(middleware.UserInfo("userID"))
 	if val == nil {
 		return "anonymous"
 	}

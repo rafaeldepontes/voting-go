@@ -17,7 +17,7 @@ const (
 	TokenPrefix = "Bearer "
 )
 
-type UserID string
+type UserInfo string
 
 type Middleware struct {
 	JwtBuilder *jwt.JwtBuilder
@@ -54,8 +54,7 @@ func (m *Middleware) AuthFilter(next http.Handler) http.Handler {
 
 		ip := GetIP(r)
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, UserID("userID"), ip)
-
+		ctx = context.WithValue(ctx, UserInfo("userID"), ip)
 		if token != "" {
 			user, err := m.JwtBuilder.VerifyToken(token)
 			if err != nil {
@@ -63,7 +62,7 @@ func (m *Middleware) AuthFilter(next http.Handler) http.Handler {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
 				return
 			}
-			ctx = context.WithValue(ctx, UserID("userID"), user.ID)
+			ctx = context.WithValue(ctx, UserInfo("userID"), user.ID)
 		}
 
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -90,6 +89,11 @@ func NewHandler(frontend string, m Middleware, han voting.Handler, auth auth.Han
 	mux.Handle(
 		"GET /polls", m.AuthFilter(
 			http.HandlerFunc(han.ListPolls),
+		),
+	)
+	mux.Handle(
+		"DELETE /polls/{id}", m.AuthFilter(
+			http.HandlerFunc(han.CancelPoll),
 		),
 	)
 

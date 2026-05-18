@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -49,6 +50,32 @@ func (h *handler) CreatePoll(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(map[string]string{"id": id})
+}
+
+// CancelPoll implements [voting.Handler].
+func (h *handler) CancelPoll(w http.ResponseWriter, r *http.Request) {
+	pollID := r.PathValue("id")
+	if pollID == "" {
+		http.Error(w, utils.ErrPollIDMissing.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := h.s.CancelPoll(r.Context(), pollID); err != nil {
+		if errors.Is(err, utils.ErrForbidden) {
+			http.Error(w, err.Error(), http.StatusForbidden)
+		}
+
+		if errors.Is(err, utils.ErrPollNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		}
+
+		if errors.Is(err, utils.ErrGenericError) {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // RegisterVote implements [voting.Handler].
