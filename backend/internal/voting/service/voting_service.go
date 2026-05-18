@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"log"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+	"github.com/rafaeldepontes/voting-go/internal/middleware"
 	"github.com/rafaeldepontes/voting-go/internal/poll"
 	"github.com/rafaeldepontes/voting-go/internal/poll/model"
 	"github.com/rafaeldepontes/voting-go/internal/utils"
@@ -51,6 +54,10 @@ func (s *service) CreatePoll(ctx context.Context, p model.PollReq) (string, erro
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if err := validatePollReq(p); err != nil {
+		return "", err
+	}
+
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		log.Printf("[ERROR] didn't create the uuid: %v\n", err)
@@ -68,11 +75,14 @@ func (s *service) CreatePoll(ctx context.Context, p model.PollReq) (string, erro
 		}
 	}
 
+	ownerID := getUserID(ctx)
 	poll := model.Poll{
 		ID:        id,
 		Text:      p.Name,
 		Options:   options,
 		Duration:  p.Duration,
+		OwnerID:   ownerID,
+		Votes:     make(map[string]struct{}),
 		CreatedAt: time.Now(),
 	}
 	if err := s.pr.Insert(ctx, poll); err != nil {
@@ -98,9 +108,15 @@ func (s *service) RegisterVote(ctx context.Context, pollID string, optionID int)
 		return utils.ErrPollExpired
 	}
 
+	if _, has := poll.Votes[getUserID(ctx)]; has {
+		s.mu.Unlock()
+		return utils.ErrDuplicatedVote
+	}
+
 	found := false
 	for i := range poll.Options {
 		if poll.Options[i].ID == optionID {
+			poll.Votes[getUserID(ctx)] = struct{}{}
 			poll.Options[i].Votes++
 			found = true
 			break
@@ -164,4 +180,45 @@ func (s *service) broadcast(ctx context.Context, pollID string) {
 		s.subscribers[pollID] = activeConns
 		s.mu.Unlock()
 	}
+}
+
+func getUserID(ctx context.Context) string {
+	val := ctx.Value(middleware.UserID("userID"))
+	if val == nil {
+		return "anonymous"
+	}
+
+	switch v := val.(type) {
+	case string:
+		return v
+	case int64:
+		return strconv.FormatInt(v, 10)
+	default:
+		return "anonymous"
+	}
+}
+
+func validatePollReq(p model.PollReq) error {
+	if strings.TrimSpace(p.Name) == "" {
+		return utils.ErrNameIsRequired
+	}
+
+	if len(p.Options) <= 1 {
+		return utils.ErrOptionsIncorrectSize
+	}
+
+	if err := validateOptions(p.Options); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func validateOptions(ops []string) error {
+	for i := range ops {
+		if strings.TrimSpace(ops[i]) == "" {
+			return utils.ErrOptionsIsRequired
+		}
+	}
+	return nil
 }

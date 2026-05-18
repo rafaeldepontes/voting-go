@@ -33,12 +33,15 @@ func init() {
 
 func main() {
 	port := os.Getenv("PORT")
+	origin := os.Getenv("ORIGIN_URL")
 	frontend := os.Getenv("FRONTEND_URL")
 	if port == "" {
 		port = "8080"
 	}
 
-	u.CheckOrigin = func(r *http.Request) bool { return r.URL.Host == frontend }
+	u.CheckOrigin = func(r *http.Request) bool {
+		return r.Host == origin
+	}
 	// u.CheckOrigin = func(r *http.Request) bool { return true }
 
 	postgres.GetDb()

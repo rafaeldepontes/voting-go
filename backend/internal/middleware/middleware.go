@@ -1,7 +1,9 @@
 package middleware
 
 import (
+	"context"
 	"log"
+	"net"
 	"net/http"
 	"strings"
 
@@ -14,6 +16,8 @@ import (
 const (
 	TokenPrefix = "Bearer "
 )
+
+type UserID string
 
 type Middleware struct {
 	JwtBuilder *jwt.JwtBuilder
@@ -38,24 +42,31 @@ func (m *Middleware) AuthFilter(next http.Handler) http.Handler {
 			}
 			token = cleanToken(dirtToken)
 		} else {
-			// Check query parameter for WebSocket connections
 			token = r.URL.Query().Get("token")
 		}
 
-		if token == "" {
-			log.Println("[DEBUG] Token is missing (neither in header nor query param)")
-			http.Error(w, utils.ErrInvalidToken.Error(), http.StatusForbidden)
-			return
+		// If the token is not present in the request... The user should be treated as anonymous
+		// if token == "" {
+		// 	log.Println("[DEBUG] Token is missing (neither in header nor query param)")
+		// 	http.Error(w, utils.ErrInvalidToken.Error(), http.StatusForbidden)
+		// 	return
+		// }
+
+		ip := GetIP(r)
+		ctx := r.Context()
+		ctx = context.WithValue(ctx, UserID("userID"), ip)
+
+		if token != "" {
+			user, err := m.JwtBuilder.VerifyToken(token)
+			if err != nil {
+				log.Printf("[DEBUG] token verification failed: %v, token length: %d\n", err, len(token))
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
+			}
+			ctx = context.WithValue(ctx, UserID("userID"), user.ID)
 		}
 
-		_, err := m.JwtBuilder.VerifyToken(token)
-		if err != nil {
-			log.Printf("[DEBUG] token verification failed: %v, token length: %d\n", err, len(token))
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
@@ -90,4 +101,15 @@ func NewHandler(frontend string, m Middleware, han voting.Handler, auth auth.Han
 	)
 
 	return mux
+}
+
+func GetIP(r *http.Request) string {
+	for _, header := range []string{"X-Forwarded-For", "X-Real-Ip"} {
+		if ip := r.Header.Get(header); ip != "" {
+			return strings.Split(ip, ",")[0]
+		}
+	}
+
+	host, _, _ := net.SplitHostPort(r.RemoteAddr)
+	return host
 }
