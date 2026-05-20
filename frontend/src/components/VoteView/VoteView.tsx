@@ -53,7 +53,7 @@ export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) =
       };
 
       socket.onerror = () => {
-        setError('Real-time connection failed. Falling back to list page.');
+        console.error('Real-time connection failed. Falling back to list page.');
         setLoading(false);
       };
 
@@ -153,9 +153,9 @@ export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) =
     const durationMs = poll.duration / 1000000;
     const expiresAt = createdAt + durationMs;
     const remaining = expiresAt - Date.now();
-    
+
     if (remaining <= 0) return 'Expired';
-    
+
     const minutes = Math.floor(remaining / 60000);
     const hours = Math.floor(minutes / 60);
     if (hours > 0) return `${hours}h ${minutes % 60}m remaining`;
@@ -208,8 +208,8 @@ export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) =
               </div>
             </div>
             {token && (
-              <button 
-                className={styles.deleteButtonInside} 
+              <button
+                className={styles.deleteButtonInside}
                 onClick={() => setShowConfirm(true)}
                 title="Cancel poll"
               >
@@ -277,15 +277,15 @@ export const VoteView = ({ token, onAuthError, onVoteSuccess }: VoteViewProps) =
             <h2>Cancel Poll</h2>
             <p>Are you sure you want to cancel this poll? This action cannot be undone and all results will be lost.</p>
             <div className={styles.modalActions}>
-              <button 
-                className={styles.confirmButton} 
+              <button
+                className={styles.confirmButton}
                 onClick={handleCancelPoll}
                 disabled={cancelling}
               >
                 {cancelling ? <Loader2 size={18} className={styles.spinner} /> : 'Yes, Cancel Poll'}
               </button>
-              <button 
-                className={styles.cancelButton} 
+              <button
+                className={styles.cancelButton}
                 onClick={() => setShowConfirm(false)}
                 disabled={cancelling}
               >

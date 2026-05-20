@@ -24,7 +24,8 @@ function App() {
   };
 
   const handleAuthError = () => {
-    setToken(null);
+    // Idk why I did this... But now it became troublesome...
+    // setToken(null);
   };
 
   return (

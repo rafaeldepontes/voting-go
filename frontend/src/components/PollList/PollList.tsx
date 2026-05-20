@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { Vote, BarChart2, PlusCircle, Clock, AlertCircle, Loader2, Trash2 } from 'lucide-react';
 import styles from './PollList.module.css';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 interface Poll {
   id: string;
   text: string;
@@ -13,8 +15,6 @@ interface PollListProps {
   token: string | null;
   onAuthError: () => void;
 }
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 export const PollList = ({ token, onAuthError }: PollListProps) => {
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -155,8 +155,8 @@ export const PollList = ({ token, onAuthError }: PollListProps) => {
                   </div>
                 </div>
                 {token && (
-                  <button 
-                    className={styles.deleteButton} 
+                  <button
+                    className={styles.deleteButton}
                     onClick={() => setPollToCancel(poll.id)}
                     title="Cancel poll"
                   >
@@ -180,15 +180,15 @@ export const PollList = ({ token, onAuthError }: PollListProps) => {
                   <div className={styles.confirmationBox}>
                     <p>Are you sure you want to cancel this poll?</p>
                     <div className={styles.confirmActions}>
-                      <button 
-                        className={styles.confirmDelete} 
+                      <button
+                        className={styles.confirmDelete}
                         onClick={() => handleCancelPoll(poll.id)}
                         disabled={cancellingId === poll.id}
                       >
                         {cancellingId === poll.id ? <Loader2 size={16} className={styles.spinner} /> : 'Cancel Poll'}
                       </button>
-                      <button 
-                        className={styles.cancelDelete} 
+                      <button
+                        className={styles.cancelDelete}
                         onClick={() => setPollToCancel(null)}
                         disabled={cancellingId === poll.id}
                       >

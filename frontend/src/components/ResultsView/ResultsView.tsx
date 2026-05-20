@@ -49,7 +49,7 @@ export const ResultsView = ({ token, onAuthError }: ResultsViewProps) => {
       };
 
       socket.onerror = () => {
-        setError('Real-time connection failed.');
+        console.error('Real-time connection failed.');
         setLoading(false);
       };
     };
@@ -128,9 +128,9 @@ export const ResultsView = ({ token, onAuthError }: ResultsViewProps) => {
     const durationMs = poll.duration / 1000000;
     const expiresAt = createdAt + durationMs;
     const remaining = expiresAt - Date.now();
-    
+
     if (remaining <= 0) return 'Concluded';
-    
+
     const minutes = Math.floor(remaining / 60000);
     const hours = Math.floor(minutes / 60);
     if (hours > 0) return `${hours}h ${minutes % 60}m remaining`;
@@ -160,8 +160,8 @@ export const ResultsView = ({ token, onAuthError }: ResultsViewProps) => {
               </div>
             </div>
             {token && (
-              <button 
-                className={styles.deleteButtonInside} 
+              <button
+                className={styles.deleteButtonInside}
                 onClick={() => setShowConfirm(true)}
                 title="Cancel poll"
               >
@@ -192,8 +192,8 @@ export const ResultsView = ({ token, onAuthError }: ResultsViewProps) => {
                   </span>
                 </div>
                 <div className={styles.progressContainer}>
-                  <div 
-                    className={styles.progressBar} 
+                  <div
+                    className={styles.progressBar}
                     style={{ width: `${percentage}%` }}
                   ></div>
                 </div>
@@ -205,7 +205,7 @@ export const ResultsView = ({ token, onAuthError }: ResultsViewProps) => {
         <div className={styles.footerActions}>
           <Link to={`/poll/${pollId}`} className={styles.voteLink}>
             <Vote size={18} />
-            <span>Cast or Change Vote</span>
+            <span>Cast Vote</span>
           </Link>
         </div>
       </div>
@@ -216,15 +216,15 @@ export const ResultsView = ({ token, onAuthError }: ResultsViewProps) => {
             <h2>Cancel Poll</h2>
             <p>Are you sure you want to cancel this poll? This action cannot be undone and all results will be lost.</p>
             <div className={styles.modalActions}>
-              <button 
-                className={styles.confirmButton} 
+              <button
+                className={styles.confirmButton}
                 onClick={handleCancelPoll}
                 disabled={cancelling}
               >
                 {cancelling ? <Loader2 size={18} className={styles.spinner} /> : 'Yes, Cancel Poll'}
               </button>
-              <button 
-                className={styles.cancelButton} 
+              <button
+                className={styles.cancelButton}
                 onClick={() => setShowConfirm(false)}
                 disabled={cancelling}
               >
